@@ -1,0 +1,112 @@
+import cmath
+
+raizes=[] #lista em q serao colocadas as raizes
+r=1
+s=1
+tol= 1e-4
+max_iter= 1000 #limite de iteracoes
+coeficientesb=[] #lista em q serao colocadas os b
+coeficientesc=[] #lista em q serao colocadas os c
+
+#é necessário determinar os valores de b e c
+def bairstow(coeficientes):
+    bn= coeficientes[0]
+    bn1=coeficientes[1]+r*bn
+    k = n-2
+    j = 0
+    coeficientesb.append(bn)
+    coeficientesb.append(bn1)
+    while k>=0:
+        bi= coeficientes[2+j] + r*coeficientesb[1+j] + s*coeficientesb[j]
+        coeficientesb.append(bi)
+        j= j+1
+        k=k-1
+    
+    cn = coeficientesb[0]
+    cn1 = coeficientesb[1] + r*cn
+    l= n - 2
+    m= 0
+    coeficientesc.append(cn)
+    coeficientesc.append(cn1)
+    while l>=1:
+        ci =  coeficientesb[2+m] + r*coeficientesc[1+m] + s*coeficientesc[m]
+        coeficientesc.append(ci)
+        m= m+1
+        l=l-1
+
+ #Regra de cramer para resolver um sistema 2x2   
+def cramer(listab, listac):
+    #C2 dr +C3 ds = -B1
+    #C1 dr + C2 ds = -B0
+    c1= coeficientesc[-1]
+    c2= coeficientesc[-2]
+    c3= coeficientesc[-3]
+    b1= coeficientesb[-2]
+    b0= coeficientesb[-1]
+    #primeiro determinar dr
+    dr= (-b1*c2-(-b0*c3)) / (c2*c2 - (c3*c1))
+    #determinando ds
+    ds= (c2*-b0-(-b1*c1))/ (c2*c2 - (c3*c1))
+    return dr, ds
+
+#criterio de convergencia, será usado para garantir que dr e ds sejam pequenos o suficiente. Esse critério resolve o bug nos casos em que r=0 ou s=0
+def convergiu(dr, ds, r, s, tol):
+    err_r = abs(dr) if r == 0 else abs(dr / r)
+    err_s = abs(ds) if s == 0 else abs(ds / s)
+    return err_r * 100 <= tol and err_s * 100 <= tol
+
+#entrada do usuário
+n = int(input("grau do polinomio: "))
+
+coeficientes = [] #aqui serao armazenados os coeficientes do polinomio original
+for i in range(n, -1, -1):
+    a = float(input(f"a{i}: "))
+    coeficientes.append(a)
+
+#valores iniciais de r e s (r0, s0) fornecidos pelo usuario
+r = float(input("valor inicial de r (r0): "))
+s = float(input("valor inicial de s (s0): "))
+
+
+while n>2:
+    it=0
+    while True:
+        coeficientesb.clear()
+        coeficientesc.clear()
+        bairstow(coeficientes)
+        dr, ds =cramer(coeficientesb, coeficientesc) 
+        r=r+dr
+        s=s+ds
+        it=it+1    
+        if convergiu(dr, ds, r, s, tol):
+            coeficientesb.clear()
+            coeficientesc.clear()
+            bairstow(coeficientes)
+            break
+        if it > max_iter:
+            raise RuntimeError(f"Bairstow nao convergiu para n={n} apos {max_iter} iteracoes "
+                f"(r={r}, s={s}). Tente outro (r0, s0) inicial.")
+            
+
+    xr1= (r+cmath.sqrt(r*r+4*s))/2
+    xr2= (r-cmath.sqrt(r*r+4*s))/2
+    raizes.append(xr1)
+    raizes.append(xr2)
+
+    coeficientes= coeficientesb[:-2]
+    n=n-2
+
+if n==2:
+    r = -coeficientes[1]/coeficientes[0]
+    s = -coeficientes[2]/coeficientes[0]
+    xr1= (r+cmath.sqrt(r*r+4*s))/2
+    xr2= (r-cmath.sqrt(r*r+4*s))/2
+    raizes.append(xr1); raizes.append(xr2)
+    n=n-2
+if n==1:
+    xr = -coeficientes[1]/coeficientes[0]
+    raizes.append(xr)
+    n=n-1
+
+if n==0:
+    print(raizes)
